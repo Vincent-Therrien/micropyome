@@ -1,5 +1,5 @@
 """
-    Micropyome is a Python library designed to study microbiomes.
+    Utility package used internally by other modules.
 
     - Author: Vincent Therrien (therrien.vincent.2@courrier.uqam.ca)
     - Affiliation: Département d'informatique, UQÀM
@@ -8,6 +8,6 @@
 """
 
 __all__ = [
-    "databases",
-    "utils"
+    "file_io",
+    "log"
 ]

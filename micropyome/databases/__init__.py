@@ -1,6 +1,5 @@
 """
-    The `databases` package contains modules that can download
-    microbiome-related datasets.
+    Download microbiome-related datasets.
 
     - Author: Vincent Therrien (therrien.vincent.2@courrier.uqam.ca)
     - Affiliation: Département d'informatique, UQÀM
@@ -9,5 +8,6 @@
 """
 
 __all__ = [
+    "bacteria",
     "neon"
 ]

@@ -20,7 +20,8 @@ dynamic = ["dependencies"]
 keywords = ["microbiome", "taxons", "machine learning"]
 
 [tool.setuptools]
-packages = ["micropyome", "micropyome.databases"]
+packages = ["micropyome", "micropyome.databases", "micropyome.utils"]
+include-package-data = true
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}

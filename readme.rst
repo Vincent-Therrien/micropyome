@@ -9,8 +9,7 @@ Study Microbiomes
 -----------------
 
 ``micropyome`` is a toolbox for studying microbiomes that can automate tasks
-such as downloading data, integrating spatial and biological data, and
-predicting taxons with machine learning models.
+such as downloading data and predicting taxons with machine learning models.
 
 
 Installation
@@ -30,9 +29,12 @@ Project Organization
 The project is organized as follows:
 
 - **micropyome**: Python source code of the library.
-- **docs**: Sphinx source files for the documentation.
+- **docs**: Sphinx source files for the documentation. You can build the
+  documentation by executing the command ``make html`` inside of the ``docs``
+  directory.
 - **demos**: Jupyter notebooks that show how to use the library.
-- **tests**: Test suite of the project, written with Pytest.
+- **tests**: Test suite of the project, written with Pytest. You can run the
+  tests by executing the command ``pytest tests``.
 
 
 Étudier les microbiomes
