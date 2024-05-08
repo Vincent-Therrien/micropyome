@@ -46,6 +46,33 @@ DATASETS = {
 }
 
 
+def _is_installed(name: str, dst: str) -> bool:
+    """Assess whether a dataset has been installed or not.
+
+    Args:
+        name (str): Name of the dataset. Run
+            `micropyome.datasets.bacteria.get_names()` to see possible
+            values.
+        dst (str): Name of the **directory** in which data are
+            downloaded.
+    """
+    # Check directories.
+    if dst[-1] != '/':
+        dst = dst + '/'
+    if not os.path.exists(dst):
+        return False
+    dst += name + "/"
+    if not os.path.exists(dst):
+        return False
+    # Check files.
+    expected = set(DATASETS[name]["downloads"].keys())
+    observed = set(os.listdir(dst))
+    for e in expected:
+        if e not in observed:
+            return False
+    return True
+
+
 def download(name: str, dst: str) -> None:
     """Download a bacteria dataset.
 
@@ -58,7 +85,6 @@ def download(name: str, dst: str) -> None:
         dst (str): Name of the **directory** in which data are
             downloaded.
     """
-    # TODO: Check if already downloaded.
     # Validate arguments.
     if not name in DATASETS.keys():
         raise ValueError(
@@ -66,9 +92,14 @@ def download(name: str, dst: str) -> None:
             + "Run `micropyome.datasets.bacteria.get_names()` to obtain "
             + "the list of valid bacteria datasets."
         )
+    if _is_installed(name, dst):
+        log.info(f"The dataset `{name}` is already installed at `{dst}`.")
+        return
     # Create the result directory.
     if dst[-1] != '/':
         dst = dst + '/'
+    file_io.create_dir(dst)
+    dst += name + "/"
     file_io.create_dir(dst)
     # Download and unzip the files.
     for file_name, target in DATASETS[name]["downloads"].items():

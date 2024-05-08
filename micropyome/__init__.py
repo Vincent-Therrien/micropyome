@@ -8,6 +8,6 @@
 """
 
 __all__ = [
-    "databases",
+    "datasets",
     "utils"
 ]

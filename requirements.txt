@@ -1,3 +1,4 @@
+alabaster==0.7.16
 anyio==4.3.0
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
@@ -18,6 +19,7 @@ cycler==0.12.1
 debugpy==1.8.1
 decorator==5.1.1
 defusedxml==0.7.1
+docutils==0.20.1
 executing==2.0.1
 fastjsonschema==2.19.1
 fonttools==4.51.0
@@ -26,6 +28,7 @@ h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
 idna==3.7
+imagesize==1.4.1
 iniconfig==2.0.0
 ipykernel==6.29.4
 ipython==8.24.0
@@ -51,9 +54,11 @@ jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.1
 jupyterlab_widgets==3.0.10
 kiwisolver==1.4.5
+latexcodec==3.0.0
 MarkupSafe==2.1.5
 matplotlib==3.8.4
 matplotlib-inline==0.1.7
+micropyome @ file:///D:/stage/micropyome
 mistune==3.0.2
 nbclient==0.10.0
 nbconvert==7.16.4
@@ -73,6 +78,8 @@ prometheus_client==0.20.0
 prompt-toolkit==3.0.43
 psutil==5.9.8
 pure-eval==0.2.2
+pybtex==0.24.0
+pybtex-docutils==1.0.3
 pycparser==2.22
 Pygments==2.18.0
 pyparsing==3.1.2
@@ -95,7 +102,18 @@ scipy==1.13.0
 Send2Trash==1.8.3
 six==1.16.0
 sniffio==1.3.1
+snowballstemmer==2.2.0
 soupsieve==2.5
+Sphinx==7.3.7
+sphinx-rtd-theme==2.0.0
+sphinxcontrib-applehelp==1.0.8
+sphinxcontrib-bibtex==2.6.2
+sphinxcontrib-devhelp==1.0.6
+sphinxcontrib-htmlhelp==2.0.5
+sphinxcontrib-jquery==4.1
+sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-qthelp==1.0.7
+sphinxcontrib-serializinghtml==1.1.10
 stack-data==0.6.3
 terminado==0.18.1
 threadpoolctl==3.5.0
