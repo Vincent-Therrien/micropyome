@@ -43,9 +43,9 @@ def title(message: str) -> None:
     """
     _print_with_datetime("")
     n = (len(message) + 1) * "-"
-    print(f"{Fore.MAGENTA}  |   ----------------{n}{Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}/ | \    MICROPYOME   {Style.RESET_ALL}{message}")
-    print(f"{Fore.MAGENTA}  |   ----------------{n}{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}----- ----------------{n}{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}~ # ~    MICROPYOME   {Style.RESET_ALL}{message}")
+    print(f"{Fore.MAGENTA}===== ----------------{n}{Style.RESET_ALL}")
 
 
 def trace(message: str) -> None:

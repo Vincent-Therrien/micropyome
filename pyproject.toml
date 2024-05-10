@@ -20,7 +20,12 @@ dynamic = ["dependencies"]
 keywords = ["microbiome", "taxons", "machine learning"]
 
 [tool.setuptools]
-packages = ["micropyome", "micropyome.datasets", "micropyome.utils"]
+packages = [
+    "micropyome",
+    "micropyome.datasets",
+    "micropyome.taxa",
+    "micropyome.utils"
+]
 include-package-data = true
 
 [tool.setuptools.dynamic]
