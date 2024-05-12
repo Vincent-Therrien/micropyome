@@ -9,12 +9,12 @@
     - License: MIT
 """
 
-from datetime import datetime
 from typing import Callable
 
 import pandas as pd
 import numpy as np
 from sklearn.metrics import r2_score
+from sklearn.model_selection import KFold
 
 from micropyome.utils import log
 from micropyome.datasets import normalize
@@ -113,3 +113,96 @@ def evaluate(
     normalize(y_pred)
 
     return r2_score_by_column(y, y_pred)
+
+
+def evaluate_models(
+        models: dict[Callable],
+        x_train: np.ndarray | pd.DataFrame,
+        y_train: np.ndarray | pd.DataFrame,
+        x_test: np.ndarray | pd.DataFrame,
+        y_test: np.ndarray | pd.DataFrame,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0
+    ) -> dict:
+    """Evaluate a collection of models at one taxon.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the functions `fit` and
+            `predict`.
+        x_train: Training input data.
+        y_train: Training output data.
+        x_test: Test input data.
+        y_test: Test output data.
+        ignore: Name or list of names of the columns to ignore. Can
+            be provided only if x and y are `pd.DataFrame` objects.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored. Can be provided only if x and y are
+            `pd.DataFrame` objects.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Beginning the evaluation of {len(models)} models.")
+    results = {}
+    for model_name, model in models.items():
+        model.fit(x_train, y_train)
+        r = evaluate(model, x_test, y_test, ignore, threshold)
+        results[model_name] = np.mean(r)
+        log.trace(f"Evaluated the model `{model_name}`.")
+    return results
+
+
+def evaluate_models_multiple_taxa(
+        models: dict[Callable],
+        x: dict,
+        y: dict,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0,
+        k_fold: int = 1
+    ) -> dict:
+    """Evaluate a collection of models at multiple taxa.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the functions `fit` and
+            `predict`.
+        x: Input data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        y: Output data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        ignore: Name or list of names of the columns to ignore. Can
+            be provided only if x and y are `pd.DataFrame` objects.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored. Can be provided only if x and y are
+            `pd.DataFrame` objects.
+        k_fold: Number of k-fold splits to use.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Evaluating {len(models)} models with {k_fold} splits.")
+    results = {}
+    for level in TAXONOMIC_LEVELS:
+        log.info(f"Level: {level}")
+        if not level in x:
+            continue
+        kf = KFold(n_splits=k_fold, shuffle=True)
+        results[level] = {}
+        for model_name in models:
+            results[level][model_name] = []
+        for i, (train_index, test_index) in enumerate(kf.split(x[level])):
+            log.info(f"K-fold split: {i}")
+            x_train = x[level].loc[train_index]
+            y_train = y[level].loc[train_index]
+            x_test = x[level].loc[test_index]
+            y_test = y[level].loc[test_index]
+            k_fold_result = evaluate_models(
+                models, x_train, y_train, x_test, y_test,
+                ignore=ignore, threshold=threshold
+            )
+            for model_name, r in k_fold_result.items():
+                results[level][model_name].append(r)
+        for model_name, rs in results[level].items():
+            results[level][model_name] = np.mean(rs)
+    return results
