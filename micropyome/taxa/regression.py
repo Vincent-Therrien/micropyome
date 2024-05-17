@@ -30,6 +30,47 @@ TAXONOMIC_LEVELS = [
 ]
 
 
+def r2_score_by_row(
+        observed: np.ndarray | pd.DataFrame,
+        prediction: np.ndarray | pd.DataFrame
+    ) -> list[float]:
+    """Calculate the coefficient of determination for row.
+
+    Args:
+        observed: Ground truth.
+        prediction: Predicted values.
+
+    Returns: The list of R square scores given in the same order as
+        the column of the arguments.
+    """
+    # Validate the arguments.
+    if type(observed) == pd.DataFrame:
+        observed = observed.to_numpy()
+    if type(prediction) == pd.DataFrame:
+        prediction = prediction.to_numpy()
+    if observed.shape != prediction.shape:
+        log.error(
+            "Cannot compute the R square score of inhomogeneous data "
+            + f"(shape 1: `{observed.shape}`, shape 2: `{prediction.shape}`)."
+        )
+        raise ValueError
+    if len(observed.shape) != 2:
+        log.error(
+            "The R square value is to be computed on a 2D array "
+            + f"(got size `{observed.shape}`)."
+        )
+        raise ValueError
+
+    # Compute the score for each column.
+    scores = []
+    for col_index in range(observed.shape[1]):
+        observed_row = observed[col_index, :]
+        predicted_row = prediction[col_index, :]
+        scores.append(r2_score(observed_row, predicted_row))
+
+    return scores
+
+
 def r2_score_by_column(
         observed: np.ndarray | pd.DataFrame,
         prediction: np.ndarray | pd.DataFrame
@@ -95,7 +136,8 @@ def evaluate(
     """
     normalize(x)
     y_pred = model.predict(x)
-    y_pred = pd.DataFrame(y_pred, columns=y.columns)
+    if type(y_pred) != pd.DataFrame:
+        y_pred = pd.DataFrame(y_pred, columns=y.columns)
 
     if ignore:
         if type(ignore) == str:
@@ -153,7 +195,7 @@ def evaluate_models(
     return results
 
 
-def evaluate_models_multiple_taxa(
+def train_evaluate_models_multiple_taxa(
         models: dict[Callable],
         x: dict,
         y: dict,
@@ -161,7 +203,7 @@ def evaluate_models_multiple_taxa(
         threshold: float = 0.0,
         k_fold: int = 1
     ) -> dict:
-    """Evaluate a collection of models at multiple taxa.
+    """Train and evaluate a collection of models at multiple taxa.
 
     Args:
         models: A dictionary formatted as `{"model name": Model}`. Each
@@ -193,10 +235,18 @@ def evaluate_models_multiple_taxa(
             results[level][model_name] = []
         for i, (train_index, test_index) in enumerate(kf.split(x[level])):
             log.info(f"K-fold split: {i}")
-            x_train = x[level].loc[train_index]
-            y_train = y[level].loc[train_index]
-            x_test = x[level].loc[test_index]
-            y_test = y[level].loc[test_index]
+            if type(x[level]) == pd.DataFrame:
+                x_train = x[level].loc[train_index]
+                x_test = x[level].loc[test_index]
+            else:
+                x_train = x[level][train_index]
+                x_test = x[level][test_index]
+            if type(y[level]) == pd.DataFrame:
+                y_train = y[level].loc[train_index]
+                y_test = y[level].loc[test_index]
+            else:
+                y_train = y[level][train_index]
+                y_test = y[level][test_index]
             k_fold_result = evaluate_models(
                 models, x_train, y_train, x_test, y_test,
                 ignore=ignore, threshold=threshold
@@ -205,4 +255,42 @@ def evaluate_models_multiple_taxa(
                 results[level][model_name].append(r)
         for model_name, rs in results[level].items():
             results[level][model_name] = np.mean(rs)
+    return results
+
+
+def evaluate_models_multiple_taxa(
+        models: dict[Callable],
+        x: dict,
+        y: dict,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0,
+    ) -> dict:
+    """Evaluate a collection of models at multiple taxa.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the function `predict`.
+        x: Input data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        y: Output data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        ignore: Name or list of names of the columns to ignore. Can
+            be provided only if x and y are `pd.DataFrame` objects.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored. Can be provided only if x and y are
+            `pd.DataFrame` objects.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Evaluating {len(models)} models.")
+    results = {}
+    for level in TAXONOMIC_LEVELS:
+        log.info(f"Level: {level}")
+        if not level in y:
+            continue
+        results[level] = {}
+        for model_name, model in models.items():
+            r = evaluate(model, x[level], y[level], ignore, threshold)
+            results[level][model_name] = np.mean(r)
     return results
