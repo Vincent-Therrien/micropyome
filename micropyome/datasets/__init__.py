@@ -15,21 +15,25 @@ __all__ = [
 ]
 
 
-def normalize_categories(df: pd.DataFrame) -> None:
+def normalize_categories(df: pd.DataFrame) -> pd.DataFrame:
     """Modify the provided data frame to set negative values to 0
     and scale rows so that the sum of their values is 1.
 
     Args:
-        df: Data frame to normalize. Modified in place.
+        df: Data frame to normalize.
+
+    Returns: Row-normalized data frame.
     """
+    result = df.copy()
     if type(df) == pd.DataFrame:
-        df[df < 0] = 0
-        row_sums = df.sum(axis=1)
-        df = df.div(row_sums, axis=0)
+        result[result < 0] = 0
+        row_sums = result.sum(axis=1)
+        result = result.div(row_sums, axis=0)
     else:
-        df[df < 0] = 0
-        row_sums = df.sum(axis=1)
-        df = (df.T / df.sum(axis=1)).T
+        result[result < 0] = 0
+        row_sums = result.sum(axis=1)
+        result = (result.T / result.sum(axis=1)).T
+    return result
 
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
@@ -39,6 +43,6 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     Args:
         df: Data frame to normalize.
 
-    Returns: Normalized data frame.
+    Returns: Column-normalized data frame.
     """
     return (df - df.min()) / (df.max() - df.min())
