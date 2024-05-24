@@ -164,7 +164,8 @@ def evaluate_models(
         x_test: np.ndarray | pd.DataFrame,
         y_test: np.ndarray | pd.DataFrame,
         ignore: list[str] | str = None,
-        threshold: float = 0.0
+        threshold: float = 0.0,
+        keep_columns: int = None
     ) -> dict:
     """Evaluate a collection of models at one taxon.
 
@@ -176,11 +177,14 @@ def evaluate_models(
         y_train: Training output data.
         x_test: Test input data.
         y_test: Test output data.
-        ignore: Name or list of names of the columns to ignore. Can
-            be provided only if x and y are `pd.DataFrame` objects.
+        ignore: Name or list of names of the columns to ignore in the
+            target (y) data. Can be provided only if y is a
+            `pd.DataFrame` object.
         threshold: Values whose absolute value are inferior to this
             parameter are ignored. Can be provided only if x and y are
             `pd.DataFrame` objects.
+        keep_columns: The number of column to keep for evaluation. If
+            `None`, all columns are used.
 
     Returns: R square metric of each model formatted as
         `{"model name": <r square score>}`.
@@ -190,7 +194,10 @@ def evaluate_models(
     for model_name, model in models.items():
         model.fit(x_train, y_train)
         r = evaluate(model, x_test, y_test, ignore, threshold)
-        results[model_name] = np.mean(r)
+        if keep_columns:
+            results[model_name] = np.mean(r[:keep_columns])
+        else:
+            results[model_name] = np.mean(r)
         log.trace(f"Evaluated the model `{model_name}`.")
     return results
 
@@ -201,7 +208,8 @@ def train_evaluate_models_multiple_taxa(
         y: dict,
         ignore: list[str] | str = None,
         threshold: float = 0.0,
-        k_fold: int = 1
+        k_fold: int = 1,
+        keep_columns: int = None
     ) -> dict:
     """Train and evaluate a collection of models at multiple taxa.
 
@@ -219,6 +227,8 @@ def train_evaluate_models_multiple_taxa(
             parameter are ignored. Can be provided only if x and y are
             `pd.DataFrame` objects.
         k_fold: Number of k-fold splits to use.
+        keep_columns: The number of column to keep for evaluation. If
+            `None`, all columns are used.
 
     Returns: R square metric of each model formatted as
         `{"model name": <r square score>}`.
@@ -249,12 +259,16 @@ def train_evaluate_models_multiple_taxa(
                 y_test = y[level][test_index]
             k_fold_result = evaluate_models(
                 models, x_train, y_train, x_test, y_test,
-                ignore=ignore, threshold=threshold
+                ignore=ignore, threshold=threshold,
+                keep_columns=keep_columns
             )
             for model_name, r in k_fold_result.items():
                 results[level][model_name].append(r)
         for model_name, rs in results[level].items():
-            results[level][model_name] = np.mean(rs)
+            if keep_columns:
+                results[level][model_name] = np.mean(rs)
+            else:
+                results[level][model_name] = np.mean(rs)
     return results
 
 
