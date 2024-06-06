@@ -108,11 +108,7 @@ def r2_score_by_column(
     for col_index in range(observed.shape[1]):
         observed_column = observed[:, col_index]
         predicted_column = prediction[:, col_index]
-        try:
-            scores.append(r2_score(observed_column, predicted_column))
-        except:
-            print(observed_column)
-            print(predicted_column)
+        scores.append(r2_score(observed_column, predicted_column))
 
     return scores
 
