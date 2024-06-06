@@ -17,7 +17,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
 
 from micropyome.utils import log
-from micropyome.datasets import normalize
+from micropyome.datasets import normalize, normalize_categories
 
 
 TAXONOMIC_LEVELS = [
@@ -89,6 +89,7 @@ def r2_score_by_column(
         observed = observed.to_numpy()
     if type(prediction) == pd.DataFrame:
         prediction = prediction.to_numpy()
+        prediction = np.nan_to_num(prediction)
     if observed.shape != prediction.shape:
         log.error(
             "Cannot compute the R square score of inhomogeneous data "
@@ -107,15 +108,19 @@ def r2_score_by_column(
     for col_index in range(observed.shape[1]):
         observed_column = observed[:, col_index]
         predicted_column = prediction[:, col_index]
-        scores.append(r2_score(observed_column, predicted_column))
+        try:
+            scores.append(r2_score(observed_column, predicted_column))
+        except:
+            print(observed_column)
+            print(predicted_column)
 
     return scores
 
 
 def evaluate(
         model: Callable,
-        x: any,
-        y: any,
+        x: pd.DataFrame,
+        y: pd.DataFrame,
         ignore: list[str] | str = None,
         threshold: float = 0.0
     ) -> list[float]:
@@ -134,10 +139,8 @@ def evaluate(
 
     Returns (float): The list of R square values by category.
     """
-    normalize(x)
     y_pred = model.predict(x)
-    if type(y_pred) != pd.DataFrame:
-        y_pred = pd.DataFrame(y_pred, columns=y.columns)
+    y_pred = pd.DataFrame(y_pred, columns=y.columns)
 
     if ignore:
         if type(ignore) == str:
@@ -151,8 +154,8 @@ def evaluate(
                 y = y.drop(columns=[column])
                 y_pred = y_pred.drop(columns=[column])
 
-    normalize(y)
-    normalize(y_pred)
+    y = normalize_categories(y)
+    y_pred = normalize_categories(y_pred)
 
     return r2_score_by_column(y, y_pred)
 
@@ -194,11 +197,56 @@ def evaluate_models(
     for model_name, model in models.items():
         model.fit(x_train, y_train)
         r = evaluate(model, x_test, y_test, ignore, threshold)
-        if keep_columns:
-            results[model_name] = np.mean(r[:keep_columns])
-        else:
-            results[model_name] = np.mean(r)
-        log.trace(f"Evaluated the model `{model_name}`.")
+        # if keep_columns:
+        #     results[model_name] = np.mean(r[:keep_columns])
+        # else:
+        results[model_name] = np.mean(r)
+    return results
+
+
+def train_evaluate_models(
+        models: dict[Callable],
+        x: pd.DataFrame,
+        y: pd.DataFrame,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0,
+        k_fold: int = 1,
+    ) -> dict:
+    """Train and evaluate a collection of models at multiple taxa.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the functions `fit` and
+            `predict`.
+        x: Input data.
+        y: Target data.
+        ignore: Name or list of names of the columns to ignore.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored.
+        k_fold: Number of k-fold splits to use.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Evaluating {len(models)} models with {k_fold} splits.")
+    results = {}
+    kf = KFold(n_splits=k_fold, shuffle=True)
+    for model_name in models:
+        results[model_name] = []
+    for i, (train_index, test_index) in enumerate(kf.split(x)):
+        log.info(f"K-fold split: {i}")
+        x_train = x.loc[train_index]
+        x_test = x.loc[test_index]
+        y_train = y.loc[train_index]
+        y_test = y.loc[test_index]
+        k_fold_result = evaluate_models(
+            models, x_train, y_train, x_test, y_test,
+            ignore=ignore, threshold=threshold,
+        )
+        for model_name, r in k_fold_result.items():
+            results[model_name].append(r)
+    for model_name, rs in results.items():
+        results[model_name] = np.mean(rs)
     return results
 
 
