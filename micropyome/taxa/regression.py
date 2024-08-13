@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 from micropyome.utils import log
 from micropyome.datasets import normalize, normalize_categories
@@ -145,10 +146,13 @@ def evaluate(
         y_pred = y_pred.drop(columns=ignore)
 
     if threshold:
+        n_drop = 0
         for column in y.columns:
             if y[column].mean() < threshold:
                 y = y.drop(columns=[column])
                 y_pred = y_pred.drop(columns=[column])
+                n_drop += 1
+        log.info(f"Dropped {n_drop} columns.")
 
     y = normalize_categories(y)
     y_pred = normalize_categories(y_pred)
@@ -241,6 +245,53 @@ def train_evaluate_models(
         )
         for model_name, r in k_fold_result.items():
             results[model_name].append(r)
+            log.info(r)
+    for model_name, rs in results.items():
+        results[model_name] = np.mean(rs)
+    return results
+
+
+def train_evaluate_models_random(
+        models: dict[Callable],
+        x: pd.DataFrame,
+        y: pd.DataFrame,
+        fraction: float = 0.2,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0,
+        iterations: int = 10,
+    ) -> dict:
+    """Train and evaluate a collection of models at multiple taxa by
+    randomly shuffling data.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the functions `fit` and
+            `predict`.
+        x: Input data.
+        y: Target data.
+        fraction: Proportion of data used for testing.
+        ignore: Name or list of names of the columns to ignore.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored.
+        iterations: Number of tests to run.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Evaluating {len(models)} models with {iterations} iterations.")
+    results = {}
+    for model_name in models:
+        results[model_name] = []
+    for i in range(iterations):
+        log.info(f"Iteration: {i}")
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=fraction)
+        res = evaluate_models(
+            models, x_train, y_train, x_test, y_test,
+            ignore=ignore, threshold=threshold,
+        )
+        for model_name, r in res.items():
+            results[model_name].append(r)
+            log.info(r)
     for model_name, rs in results.items():
         results[model_name] = np.mean(rs)
     return results
@@ -255,7 +306,8 @@ def train_evaluate_models_multiple_taxa(
         k_fold: int = 1,
         keep_columns: int = None
     ) -> dict:
-    """Train and evaluate a collection of models at multiple taxa.
+    """Train and evaluate a collection of models at multiple taxa on a
+    test set.
 
     Args:
         models: A dictionary formatted as `{"model name": Model}`. Each
@@ -313,6 +365,52 @@ def train_evaluate_models_multiple_taxa(
                 results[level][model_name] = np.mean(rs)
             else:
                 results[level][model_name] = np.mean(rs)
+    return results
+
+
+def multiple_taxa(
+        models: dict[Callable],
+        x: dict,
+        y: dict,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0,
+        keep_columns: int = None
+    ) -> dict:
+    """Train and evaluate a collection of models at multiple taxa.
+
+    Args:
+        models: A dictionary formatted as `{"model name": Model}`. Each
+            `Model` object must support the functions `fit` and
+            `predict`.
+        x: Input data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        y: Output data. Must be formatted as
+            `{<taxon name>: `dataFrame`}`.
+        ignore: Name or list of names of the columns to ignore. Can
+            be provided only if x and y are `pd.DataFrame` objects.
+        threshold: Values whose absolute value are inferior to this
+            parameter are ignored. Can be provided only if x and y are
+            `pd.DataFrame` objects.
+        keep_columns: The number of column to keep for evaluation. If
+            `None`, all columns are used.
+
+    Returns: R square metric of each model formatted as
+        `{"model name": <r square score>}`.
+    """
+    log.info(f"Evaluating {len(models)} models.")
+    results = {}
+    for level in TAXONOMIC_LEVELS:
+        log.info(f"Level: {level}")
+        if not level in x:
+            continue
+        results[level] = {}
+        level_results = evaluate_models(
+            models, x[level], y[level], x[level], y[level],
+            ignore=ignore, threshold=threshold,
+            keep_columns=keep_columns
+        )
+        for r in level_results:
+            results[level][r] = np.mean(level_results[r])
     return results
 
 

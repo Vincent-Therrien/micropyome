@@ -5,11 +5,17 @@ micropyome
 - `Français (fr) <#Étudier-les-microbiomes>`_
 
 
-Study Microbiomes
------------------
+Soil Microbiome Predictions
+---------------------------
 
-``micropyome`` is a toolbox for studying microbiomes that can automate tasks
-such as downloading data and predicting taxons with machine learning models.
+This repository contains the data and code required to replicate our results
+for soil microbiome predictions from environmental features.
+
+Preliminary citation::
+
+   Zahia Aouabed, Mohamed Achraf Bouaoune, Vincent Therrien, Mohammadreza Bakhtyari, Mohamed Hijri, and Vladimir Makarenkov. "Communities at Different Taxonomic Levels Using Machine Learning" (2024). Proceedings of the international conference IFCS-2024 (Costa Rica), Springer Verlag, pages 31-39.
+
+A newer version of the research is to be published in a journal.
 
 
 Installation
@@ -21,6 +27,17 @@ following command:
 .. code-block:: bash
 
    pip install .
+
+
+Results
+```````
+
+Our results are provided in Jupyter notebooks:
+
+- The code required to replicate results with linear models is located in the
+  notebook ``demo/regressions.ipynb``.
+- The code required to replicate results with neural networks is located in the
+  notebook ``demo/autoencoder.ipynb``.
 
 
 Project Organization
@@ -37,9 +54,13 @@ The project is organized as follows:
   tests by executing the command ``pytest tests``.
 
 
-Étudier les microbiomes
------------------------
+Prédiction des microbiomes
+--------------------------
 
-``micropyome`` est une bibliothèque Python pour l'étude de microbiomes. Elle
-permet de télécharger et d'agréger des données et d'utiliser des modèles
-d'apprentissage automatique pour prédire des taxons.
+Ce dépôt contient les données requises pour répliquer nos résultats de
+prédiction d'abondances relatives d'organismes dans des microbiomes. L'article
+suivant présente nos résultats préliminaires::
+
+   Zahia Aouabed, Mohamed Achraf Bouaoune, Vincent Therrien, Mohammadreza Bakhtyari, Mohamed Hijri, and Vladimir Makarenkov. "Communities at Different Taxonomic Levels Using Machine Learning" (2024). Proceedings of the international conference IFCS-2024 (Costa Rica), Springer Verlag, pages 31-39.
+
+Nous prévoyons publier Une version actualisée des résultats.

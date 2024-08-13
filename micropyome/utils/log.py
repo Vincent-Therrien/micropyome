@@ -14,7 +14,19 @@ from colorama import Fore
 from colorama import Style
 
 
+ENABLED = True
+
 colorama_init()
+
+
+def silence():
+    global ENABLED
+    ENABLED = False
+
+
+def enable():
+    global ENABLED
+    ENABLED = True
 
 
 def _print_with_datetime(message: str) -> None:
@@ -23,7 +35,8 @@ def _print_with_datetime(message: str) -> None:
     Args:
         message (str): Message to print.
     """
-    print(f"{datetime.now().isoformat()} {message}")
+    if ENABLED:
+        print(f"{datetime.now().isoformat()} {message}")
 
 
 def info(message: str) -> None:
