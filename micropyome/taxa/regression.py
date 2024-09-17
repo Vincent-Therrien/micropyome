@@ -114,6 +114,40 @@ def r2_score_by_column(
     return scores
 
 
+def predict(
+        model: Callable,
+        x: pd.DataFrame,
+        y: pd.DataFrame,
+        ignore: list[str] | str = None,
+        threshold: float = 0.0
+    ) -> tuple[pd.DataFrame]:
+    """Predict relative abundances.
+
+    Returns: Observed and predicted data frames.
+    """
+    y_pred = model.predict(x)
+    y_pred = pd.DataFrame(y_pred, columns=y.columns)
+
+    if ignore:
+        if type(ignore) == str:
+            ignore = [ignore]
+        y = y.drop(columns=ignore)
+        y_pred = y_pred.drop(columns=ignore)
+
+    if threshold:
+        n_drop = 0
+        for column in y.columns:
+            if y[column].mean() < threshold:
+                y = y.drop(columns=[column])
+                y_pred = y_pred.drop(columns=[column])
+                n_drop += 1
+        log.info(f"Dropped {n_drop} columns.")
+
+    y = normalize_categories(y)
+    y_pred = normalize_categories(y_pred)
+    return y, y_pred
+
+
 def evaluate(
         model: Callable,
         x: pd.DataFrame,
@@ -136,27 +170,7 @@ def evaluate(
 
     Returns (float): The list of R square values by category.
     """
-    y_pred = model.predict(x)
-    y_pred = pd.DataFrame(y_pred, columns=y.columns)
-
-    if ignore:
-        if type(ignore) == str:
-            ignore = [ignore]
-        y = y.drop(columns=ignore)
-        y_pred = y_pred.drop(columns=ignore)
-
-    if threshold:
-        n_drop = 0
-        for column in y.columns:
-            if y[column].mean() < threshold:
-                y = y.drop(columns=[column])
-                y_pred = y_pred.drop(columns=[column])
-                n_drop += 1
-        log.info(f"Dropped {n_drop} columns.")
-
-    y = normalize_categories(y)
-    y_pred = normalize_categories(y_pred)
-
+    y, y_pred = predict(model, x, y, ignore, threshold)
     return r2_score_by_column(y, y_pred)
 
 
