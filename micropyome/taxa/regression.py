@@ -72,6 +72,9 @@ def r2_score_by_row(
     return scores
 
 
+TMP_CONTAINER = []
+
+
 def r2_score_by_column(
         observed: np.ndarray | pd.DataFrame,
         prediction: np.ndarray | pd.DataFrame
@@ -85,6 +88,7 @@ def r2_score_by_column(
     Returns: The list of R square scores given in the same order as
         the column of the arguments.
     """
+    # names = observed.columns
     # Validate the arguments.
     if type(observed) == pd.DataFrame:
         observed = observed.to_numpy()
@@ -110,6 +114,10 @@ def r2_score_by_column(
         observed_column = observed[:, col_index]
         predicted_column = prediction[:, col_index]
         scores.append(r2_score(observed_column, predicted_column))
+
+    #global TMP_CONTAINER
+    #TMP_CONTAINER.append(str(list(names)))
+    #TMP_CONTAINER.append(scores)
 
     return scores
 
@@ -244,9 +252,11 @@ def train_evaluate_models(
     """
     log.info(f"Evaluating {len(models)} models with {k_fold} splits.")
     results = {}
+    errors = {}
     kf = KFold(n_splits=k_fold, shuffle=True)
     for model_name in models:
         results[model_name] = []
+        errors[model_name] = []
     for i, (train_index, test_index) in enumerate(kf.split(x)):
         log.info(f"K-fold split: {i}")
         x_train = x.loc[train_index]
@@ -261,8 +271,9 @@ def train_evaluate_models(
             results[model_name].append(r)
             log.info(r)
     for model_name, rs in results.items():
+        errors[model_name] = np.std(rs) * 2
         results[model_name] = np.mean(rs)
-    return results
+    return results, errors
 
 
 def train_evaluate_models_random(
@@ -294,8 +305,10 @@ def train_evaluate_models_random(
     """
     log.info(f"Evaluating {len(models)} models with {iterations} iterations.")
     results = {}
+    errors = {}
     for model_name in models:
         results[model_name] = []
+        errors[model_name] = []
     for i in range(iterations):
         log.info(f"Iteration: {i}")
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=fraction)
@@ -307,8 +320,9 @@ def train_evaluate_models_random(
             results[model_name].append(r)
             log.info(r)
     for model_name, rs in results.items():
+        errors[model_name] = np.std(rs) * 2
         results[model_name] = np.mean(rs)
-    return results
+    return results, errors
 
 
 def train_evaluate_models_multiple_taxa(
@@ -345,14 +359,17 @@ def train_evaluate_models_multiple_taxa(
     """
     log.info(f"Evaluating {len(models)} models with {k_fold} splits.")
     results = {}
+    errors = {}
     for level in TAXONOMIC_LEVELS:
         log.info(f"Level: {level}")
         if not level in x:
             continue
         kf = KFold(n_splits=k_fold, shuffle=True)
         results[level] = {}
+        errors[level] = {}
         for model_name in models:
             results[level][model_name] = []
+            errors[level][model_name] = []
         for i, (train_index, test_index) in enumerate(kf.split(x[level])):
             log.info(f"K-fold split: {i}")
             if type(x[level]) == pd.DataFrame:
@@ -376,10 +393,12 @@ def train_evaluate_models_multiple_taxa(
                 results[level][model_name].append(r)
         for model_name, rs in results[level].items():
             if keep_columns:
+                errors[level][model_name] = np.std(rs) * 2
                 results[level][model_name] = np.mean(rs)
             else:
+                errors[level][model_name] = np.std(rs) * 2
                 results[level][model_name] = np.mean(rs)
-    return results
+    return results, errors
 
 
 def multiple_taxa(
