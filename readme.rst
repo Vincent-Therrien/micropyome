@@ -57,10 +57,10 @@ To load the data and train the regressors to replicate our results, you need to:
 4. You can now open the notebook ``demon/regression.ipynb`` and execute it with the Python virtual environment that you configured. The notebook cells filter and normalize input data, train machine learning regression models, and evaluate the trained models using R^2.
 5. For example, using the input files ``15_variables.csv``, ``observed.csv``, ``y_11groupTaxo.csv``, and ``y_11groupTaxo.csv``, from the directory ``data/averill/bacteria``, we obtain the results shown in the article for the bacterial dataset of Averill et al. - they will be displayed in the notebook.
 
-For example, we obtain the following output with the k-NN ML model and the Dirichlet model used by Averill et al::
+For example, we obtain the following output with the k-NN ML model and the Dirichlet multivariable regression model used by Averill et al::
 
-   k-NN (k = 20): [0.242, 0.461, 0.421, 0.411, 0.350, 0.142]
-   Averill et al. [0.663, 0.484, 0.365, 0.420, 0.327, 0.207]
+   k-NN (k = 20): [0.243, 0.458, 0.420, 0.423, 0.359, 0.271]
+   Dirichlet (Averill et al.): [0.663, 0.484, 0.365, 0.420, 0.327, 0.207]
 
 We graph these results against taxonomic levels to obtain the following figure:
 
