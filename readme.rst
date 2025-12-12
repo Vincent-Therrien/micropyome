@@ -1,5 +1,5 @@
-Soil Microbiome Predictions
-===========================
+Soil Microbiome Prediction Project
+==================================
 
 This repository contains the data and code required to replicate our results
 for soil microbiome predictions from environmental features.
